@@ -18,13 +18,20 @@ def root():
 @app.post("/api/predict")
 async def predict(file: UploadFile = File(...)):
 
+    # Get the uploaded file extension
     suffix = os.path.splitext(file.filename)[1]
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp:
+    # Save uploaded audio temporarily
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=suffix
+    ) as temp:
+
         temp.write(await file.read())
         temp_path = temp.name
 
     try:
+        # Run VOXSHIELD prediction
         result = predict_voice_sample(temp_path)
 
         return {
@@ -36,6 +43,12 @@ async def predict(file: UploadFile = File(...)):
             "decision": result["decision"]
         }
 
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
+
     finally:
+        # Delete temporary audio file
         if os.path.exists(temp_path):
             os.remove(temp_path)
